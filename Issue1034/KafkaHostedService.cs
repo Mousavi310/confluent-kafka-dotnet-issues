@@ -88,7 +88,7 @@ namespace Issue1034
             var consumerConfig = new ConsumerConfig
             {
                 BootstrapServers = bootstrapServers,
-                AutoOffsetReset = AutoOffsetReset.Latest,
+                AutoOffsetReset = AutoOffsetReset.Earliest,
                 GroupId = groupID // "Test" //Guid.NewGuid().ToString()
             };
 
