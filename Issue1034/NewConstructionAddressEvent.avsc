@@ -1,0 +1,105 @@
+{
+  "type": "record",
+  "name": "NewConstructionAddressEvent",
+  "namespace": "com.company.sub.event",
+  "doc": "@author: Smith, @description: Avro Schema for an address",
+  "fields": [
+    {
+      "name": "eventId",
+      "type": {
+        "type": "string",
+        "avro.java.string": "String"
+      },
+      "doc": "@required: true, @description: unique id (UUID version 4 and variant 2) for an event, @examples: d15f36fe-ab1e-4d5c-9a04-a1827ac0c330"
+    },
+    {
+      "name": "eventType",
+      "type": {
+        "type": "string",
+        "avro.java.string": "String"
+      },
+      "doc": "@required: true, @description: operation type for event, @examples: created|updated|deleted"
+    },
+    {
+      "name": "constructionAddressId",
+      "type": {
+        "type": "string",
+        "avro.java.string": "String"
+      },
+      "doc": "@required: true, @description: unique nds id for a construction address object, @examples: 35051923"
+    },
+    {
+      "name": "units",
+      "type": [
+        "null",
+        {
+          "type": "array",
+          "items": {
+            "type": "record",
+            "name": "Unit",
+            "fields": [
+              {
+                "name": "unitNumber",
+                "type": [
+                  "null",
+                  {
+                    "type": "string",
+                    "avro.java.string": "String"
+                  }
+                ],
+                "doc": "@required: false, @description: a specific unit number for an individual unit within a multi-dwelling unit, @examples: 1|101",
+                "default": null
+              },
+              {
+                "name": "type",
+                "type": [
+                  "null",
+                  {
+                    "type": "string",
+                    "avro.java.string": "String"
+                  }
+                ],
+                "doc": "@required: false, @description: the type of the unit, @examples: Apartment|Building",
+                "default": null
+              },
+              {
+                "name": "story",
+                "type": [
+                  "null",
+                  {
+                    "type": "string",
+                    "avro.java.string": "String"
+                  }
+                ],
+                "doc": "@required: false, @description: the story or floor number for the unit, @examples: 1|2|3",
+                "default": null
+              },
+              {
+                "name": "fiberCount",
+                "type": [
+                  "null",
+                  {
+                    "type": "string",
+                    "avro.java.string": "String"
+                  }
+                ],
+                "doc": "@required: false, @description: the number of fibers available at the unit, @examples: 1|4",
+                "default": null
+              }
+            ]
+          }
+        }
+      ],
+      "doc": "@required: false, @description: unit numbers will be available for multi-dwelling unit - demand points, @examples: unit number details",
+      "default": null
+    },
+    {
+      "name": "constructionIndicator",
+      "type": {
+        "type": "string",
+        "avro.java.string": "String"
+      },
+      "doc": "@required: true, @description: construction stages (yes means in construction stage and no means in completed stage), @examples: yes|no"
+    }
+  ]
+}

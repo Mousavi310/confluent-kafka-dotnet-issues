@@ -1,4 +1,6 @@
 ﻿using System;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 
 namespace Issue1034
 {
@@ -6,7 +8,19 @@ namespace Issue1034
     {
         static void Main(string[] args)
         {
-            Console.WriteLine("Hello World!");
+            var builder = new HostBuilder()
+                .ConfigureAppConfiguration((hostingContext, config) => 
+                {
+
+                })
+                .ConfigureServices((hostContext, services) => 
+                {
+                    //services.AddHostedService<>();
+                })
+                .ConfigureLogging((hostingContext, logging) =>
+                {
+                    logging.AddConsole();
+                });
         }
     }
 }
