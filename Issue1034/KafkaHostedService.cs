@@ -20,14 +20,52 @@ namespace Issue1034
         }
         protected override Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            throw new System.NotImplementedException();
+            return Task.Run(() => 
+            {
+                var bootstrapServers = "localhost:9092";
+                var schemaRegistryUrl = "http://localhost:8081/";
+                var topicName = "topic2";
+
+                NewConstructionAddressEvent addr = new NewConstructionAddressEvent
+                {
+                    eventId = "EventId",
+                    eventType = "EventType",
+                    constructionAddressId = "ConstructionAddressId",
+                    constructionIndicator = "constructionIndicator"
+                };
+                Produce(bootstrapServers, schemaRegistryUrl, topicName, addr);
+                Consume(bootstrapServers, schemaRegistryUrl, topicName);
+            });
         }
 
-        public void Consume()
+        public static void Produce(string broker, 
+            string schemaRegistryUrl,
+            string topic,
+            NewConstructionAddressEvent item)
         {
-            var bootstrapServers = "localhost:9092";
-            var schemaRegistryUrl = "http://localhost:8081/";
-            var topicName = "topic2";
+            using(var schemaRegistry = new CachedSchemaRegistryClient(
+                new SchemaRegistryConfig {SchemaRegistryUrl = schemaRegistryUrl}
+            ))
+            {
+                var config = new ProducerConfig{
+                        BootstrapServers = broker,
+                    };
+                using(var producer = new ProducerBuilder<string, NewConstructionAddressEvent>(config)
+                .SetValueSerializer(new SyncOverAsyncSerializer<NewConstructionAddressEvent>(new AvroSerializer<NewConstructionAddressEvent>(schemaRegistry)))
+                .SetKeySerializer(new SyncOverAsyncSerializer<string>(new AvroSerializer<string>(schemaRegistry)))
+                 .Build())
+                {
+                    producer
+                            .Produce(topic, new Message<string, NewConstructionAddressEvent>{Value = item, Key = Guid.NewGuid().ToString()});                        
+
+                    producer.Flush();
+                }
+            }
+
+        }
+
+        public void Consume(string bootstrapServers, string schemaRegistryUrl, string topicName)
+        {
             var schemaRegistryRequestTimeoutMs = 30000;
             var schemaRegistryMaxCachedSchemas = 1000;
             var groupID = Guid.NewGuid().ToString();
