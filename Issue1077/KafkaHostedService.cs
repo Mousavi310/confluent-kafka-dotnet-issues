@@ -1,9 +1,11 @@
+using System.Linq;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Confluent.Kafka;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 
 namespace Issue1077
 {
@@ -15,19 +17,30 @@ namespace Issue1077
             this.logger = logger;
         }
 
-        protected override Task ExecuteAsync(CancellationToken stoppingToken)
+        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             string topic = "mytopic";
             string broker = "localhost:9092";
+            int consuemrDelay = 50;
+            int producerDelay = 10;
 
-            return Task.Run(async () => 
-            {                
-                await Produce(broker, topic);
-                Consume(broker, topic);
+            var producerTask = Task.Run(async () => 
+            {      
+                while(true)      
+                {
+                    await Produce(broker, topic, consuemrDelay);
+                }
+                
             });
+
+            var consumerTask = Task.Run(async () => 
+            {        
+                await Consume(broker, topic, producerDelay);
+            });
+
         }
 
-        private async Task Produce(string broker, string topic)
+        private async Task Produce(string broker, string topic, int delay)
         {
             var config = new ProducerConfig { BootstrapServers =  broker};
 
@@ -36,7 +49,8 @@ namespace Issue1077
                 try
                 {
                     var dr = await p.ProduceAsync(topic, new Message<Null, string> { Value="test" });
-                    Console.WriteLine($"Delivered '{dr.Value}' to '{dr.TopicPartitionOffset}'");
+                    //Console.WriteLine($"Delivered '{dr.Value}' to '{dr.TopicPartitionOffset}'");
+                    await Task.Delay(delay);
                 }
                 catch (ProduceException<Null, string> e)
                 {
@@ -45,7 +59,7 @@ namespace Issue1077
             }
         }
 
-        private void Consume(string broker, string topic)
+        private async Task Consume(string broker, string topic, int delay)
         {
             var conf = new ConsumerConfig
             { 
@@ -57,12 +71,26 @@ namespace Issue1077
                 // topic/partitions of interest. By default, offsets are committed
                 // automatically, so in this example, consumption will only start from the
                 // earliest message in the topic 'my-topic' the first time you run the program.
-                AutoOffsetReset = AutoOffsetReset.Earliest
+                AutoOffsetReset = AutoOffsetReset.Earliest,
+                StatisticsIntervalMs = 10000
             };
 
-            using (var c = new ConsumerBuilder<Ignore, string>(conf).Build())
+            using (var c = new ConsumerBuilder<Ignore, string>(conf)
+            .SetStatisticsHandler((d, statisticsJson) => 
             {
-                c.Subscribe("my-topic");
+                var statistics = JsonConvert.DeserializeObject<ConsumerStatistics>(statisticsJson);
+
+                foreach(var topic in statistics.Topics)
+                {
+                    foreach(var partition in topic.Value.Partitions)
+                    {
+                        logger.LogInformation($"Consumer lag for topic: [{topic.Key}], partition: [{partition.Key}], consumer group: [{conf.GroupId}] is {partition.Value.ConsumerLag}");
+                    }
+                }
+            })
+            .Build())
+            {
+                c.Subscribe(topic);
 
                 CancellationTokenSource cts = new CancellationTokenSource();
                 Console.CancelKeyPress += (_, e) => {
@@ -77,7 +105,8 @@ namespace Issue1077
                         try
                         {
                             var cr = c.Consume(cts.Token);
-                            Console.WriteLine($"Consumed message '{cr.Value}' at: '{cr.TopicPartitionOffset}'.");
+                            //Console.WriteLine($"Consumed message '{cr.Value}' at: '{cr.TopicPartitionOffset}'.");
+                            await Task.Delay(delay);
                         }
                         catch (ConsumeException e)
                         {
