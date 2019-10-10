@@ -1,4 +1,5 @@
 ﻿using System;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
@@ -15,7 +16,7 @@ namespace Issue1034
                 })
                 .ConfigureServices((hostContext, services) => 
                 {
-                    //services.AddHostedService<>();
+                    services.AddHostedService<KafkaHostedService>();
                 })
                 .ConfigureLogging((hostingContext, logging) =>
                 {
