@@ -24,7 +24,7 @@ namespace Issue1034
             {
                 var bootstrapServers = "localhost:9092";
                 var schemaRegistryUrl = "http://localhost:8081/";
-                var topicName = "topic2";
+                var topicName = "topic1";
 
                 NewConstructionAddressEvent addr = new NewConstructionAddressEvent
                 {
